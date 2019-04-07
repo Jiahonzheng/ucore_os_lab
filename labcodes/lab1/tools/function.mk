@@ -8,15 +8,29 @@ listf = $(filter $(if $(2),$(addprefix %.,$(2)),%),\
 		  $(wildcard $(addsuffix $(SLASH)*,$(1))))
 
 # get .o obj files: (#files[, packet])
+# 将输入的文件序列转换为 obj 文件，如 src/*.c -> obj/*.o
+# $1: files - 输入的文件序列
+# $2: [subdirectory] - 将文件放入目标文件夹的特定子文件夹中
+# return: **/*.? -> obj/[subdirectory]/*.o
 toobj = $(addprefix $(OBJDIR)$(SLASH)$(if $(2),$(2)$(SLASH)),\
 		$(addsuffix .o,$(basename $(1))))
 
 # get .d dependency files: (#files[, packet])
+# 将输入的文件序列转换为 .d 文件，如 src/*.c -> deps/*.d
+# $1: files - 输入的文件序列
+# $2: [subdirectory] - 将文件放入目标文件夹的特定子文件夹中
+# return: **/*.? -> obj/[subdirectory]/*.d
 todep = $(patsubst %.o,%.d,$(call toobj,$(1),$(2)))
 
+# 获得文件对应在 BINDIR 文件夹中的位置
+# $1: files - 输入的文件
+# return: *.? -> bin/*.?
 totarget = $(addprefix $(BINDIR)$(SLASH),$(1))
 
 # change $(name) to $(OBJPREFIX)$(name): (#names)
+# 将 names 转换为 OBJPREFIX + name
+# $1: names - 名称序列
+# return: name -> OBJPREFIX + name
 packetname = $(if $(1),$(addprefix $(OBJPREFIX),$(1)),$(OBJPREFIX))
 
 # cc compile template, generate rule for dep, obj: (file, cc[, flags, dir])
