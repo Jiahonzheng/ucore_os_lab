@@ -176,6 +176,7 @@ static void default_free_pages(struct Page *base, size_t n) {
   list_entry_t *le = list_next(&free_list);
   // 遍历列表，查找是否存在可以合并的块
   // 可以合并的块至多两个，一个在 base 前面，一个在 base 后面
+  list_entry_t *entry = &free_list;
   for (; le != &free_list; le = list_next(le)) {
     p = le2page(le, page_link);
     if (base + base->property == p) {  // 向后合并

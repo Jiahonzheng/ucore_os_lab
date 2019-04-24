@@ -124,8 +124,8 @@ struct e820map {
  * */
 struct Page {
   int ref;  // 页帧的引用计数器，若被页表引用的次数为 0，那么这个页帧将被释放
-  uint32_t flags;  // array of flags that describe the status of the page frame
-  unsigned int property;  // the num of free block, used in first fit pm manager
+  uint32_t flags;          // 标志位
+  unsigned int property;   // 连续内存空闲块大小
   list_entry_t page_link;  // 空闲块列表 free_list 的链表项
 };
 

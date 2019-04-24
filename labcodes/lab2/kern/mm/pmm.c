@@ -311,27 +311,26 @@ void pmm_init(void) {
  * */
 pte_t *get_pte(pde_t *pgdir, uintptr_t la, bool create) {
   // LAB2 EXERCISE 2
-  // (1) find page directory entry
+  // 获得线性地址对应的页表目录项
   pde_t *pdep = &pgdir[PDX(la)];
-  // (2) check if entry is not present
-  if (!(*pdep & PTE_P)) {
+  // 判断页表目录项是否存在
+  if (!(*pdep & PTE_P)) {  // 若页表目录项不存在
     struct Page *page;
-    // (3) check if creating is needed, then alloc page for page table
-    // CAUTION: this page is used for page table, not for common data page
+    // 申请一个内存物理页
     if (!create || (page = alloc_page()) == NULL) {
       return NULL;
     }
-    // (4) set page reference
+    // 设置内存页引用数目为 1
     set_page_ref(page, 1);
-    // (5) get linear address of page
+    // 获取页面对应的物理地址
     uintptr_t pa = page2pa(page);
-    // (6) clear page content using memset
+    // 将内存页内容初始化为零
     memset(KADDR(pa), 0, PGSIZE);
-    // (7) set page directory entry's permission
+    // 设置页表目录项权限
     *pdep = pa | PTE_U | PTE_W | PTE_P;
   }
   pte_t *pt = (pte_t *)KADDR(PDE_ADDR(*pdep));
-  // (8) return page table entry
+  // 返回页表项地址
   return &pt[PTX(la)];
 }
 
@@ -355,18 +354,17 @@ struct Page *get_page(pde_t *pgdir, uintptr_t la, pte_t **ptep_store) {
  * */
 static inline void page_remove_pte(pde_t *pgdir, uintptr_t la, pte_t *ptep) {
   // LAB2 EXERCISE 3
-  // check if this page table entry is present
+  // 判断页表项是否存在
   if (*ptep & PTE_P) {
-    // find corresponding page to pte
+    // 获取对应物理页
     struct Page *page = pte2page(*ptep);
-    // decrease page reference and free this page when page's reference
-    // reachs 0
+    // 减少物理页的引用数目，若引用数目变为零，则释放页面
     if (!page_ref_dec(page)) {
       free_page(page);
     }
-    // clear second page table entry
+    // 取消二级页表项的映射
     *ptep = 0;
-    // flush TLB
+    // 更新 TLB
     tlb_invalidate(pgdir, la);
   }
 }
