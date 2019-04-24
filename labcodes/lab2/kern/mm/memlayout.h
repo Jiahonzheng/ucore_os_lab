@@ -4,21 +4,32 @@
 /* This file contains the definitions for memory management in our OS. */
 
 /* global segment number */
-#define SEG_KTEXT 1
-#define SEG_KDATA 2
-#define SEG_UTEXT 3
-#define SEG_UDATA 4
-#define SEG_TSS 5
+#define SEG_KTEXT 1  //内核代码段
+#define SEG_KDATA 2  // 内核数据段
+#define SEG_UTEXT 3  // 用户代码段
+#define SEG_UDATA 4  // 用户数据段
+#define SEG_TSS 5    // 任务选择段
 
-/* global descrptor numbers */
+/* *
+ * global descrptor numbers
+ * 全局描述符编号
+ * */
 #define GD_KTEXT ((SEG_KTEXT) << 3)  // kernel text
 #define GD_KDATA ((SEG_KDATA) << 3)  // kernel data
 #define GD_UTEXT ((SEG_UTEXT) << 3)  // user text
 #define GD_UDATA ((SEG_UDATA) << 3)  // user data
 #define GD_TSS ((SEG_TSS) << 3)      // task segment selector
 
-#define DPL_KERNEL (0)
-#define DPL_USER (3)
+/* *
+ * 权限级别
+ * */
+
+#define DPL_KERNEL (0)  // 内核权限级
+#define DPL_USER (3)    // 用户权限级
+
+/* *
+ * 代码段描述符
+ * */
 
 #define KERNEL_CS ((GD_KTEXT) | DPL_KERNEL)
 #define KERNEL_DS ((GD_KDATA) | DPL_KERNEL)
@@ -75,10 +86,22 @@
 #include <defs.h>
 #include <list.h>
 
+/* *
+ * 页表项类型
+ * 高 20 位为页面编号，低 12 位为页表项标记
+ * */
 typedef uintptr_t pte_t;
+
+/* *
+ * 页表目录类型
+ * 高 20 位为页表索引，低 12 位为页表项标记
+ * */
 typedef uintptr_t pde_t;
 
-// some constants for bios interrupt 15h AX = 0xE820
+/* *
+ * BIOS 15H 中断的一些相关常量
+ * see bootasm.S
+ * */
 #define E820MAX 20  // number of entries in E820MAP
 #define E820_ARM 1  // address range memory
 #define E820_ARR 2  // address range reserved
@@ -96,12 +119,14 @@ struct e820map {
  * struct Page - Page descriptor structures. Each Page describes one
  * physical page. In kern/mm/pmm.h, you can find lots of useful functions
  * that convert Page to other data types, such as phyical address.
+ *
+ * 页描述符
  * */
 struct Page {
-  int ref;         // page frame's reference counter
+  int ref;  // 页帧的引用计数器，若被页表引用的次数为 0，那么这个页帧将被释放
   uint32_t flags;  // array of flags that describe the status of the page frame
   unsigned int property;  // the num of free block, used in first fit pm manager
-  list_entry_t page_link;  // free list link
+  list_entry_t page_link;  // 空闲块列表 free_list 的链表项
 };
 
 /* Flags describing the status of a page frame */
@@ -115,9 +140,14 @@ struct Page {
      // this Page and the memory block is alloced. Or this Page isn't the head
      // page.
 
+// 将页面设置为保留页面。供给内存分配器管理
 #define SetPageReserved(page) set_bit(PG_reserved, &((page)->flags))
 #define ClearPageReserved(page) clear_bit(PG_reserved, &((page)->flags))
+
+// 判断页面是否保留。保留页面不可用于分配，保留的页面给 pmm_manager 进行处理
 #define PageReserved(page) test_bit(PG_reserved, &((page)->flags))
+
+// 将该页面标记为空闲内存块的头页面
 #define SetPageProperty(page) set_bit(PG_property, &((page)->flags))
 #define ClearPageProperty(page) clear_bit(PG_property, &((page)->flags))
 #define PageProperty(page) test_bit(PG_property, &((page)->flags))
@@ -127,8 +157,8 @@ struct Page {
 
 /* free_area_t - maintains a doubly linked list to record free (unused) pages */
 typedef struct {
-  list_entry_t free_list;  // the list header
-  unsigned int nr_free;    // # of free pages in this free list
+  list_entry_t free_list;  // 空闲块双向链表的头
+  unsigned int nr_free;    // 空闲块总数，以页为单位
 } free_area_t;
 
 #endif /* !__ASSEMBLER__ */

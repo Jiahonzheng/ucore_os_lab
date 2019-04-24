@@ -124,11 +124,11 @@ static void default_init_memmap(struct Page *base, size_t n) {
   list_add_before(&free_list, &(base->page_link));
 }
 
-/**
+/* *
  * 在空闲页面表中寻找第一个大小足够大(>=n)的块，
  * 修改块大小成剩余部分的大小。
  * @return 分配的内存的首地址，若分配失败返回 NULL
- */
+ * */
 static struct Page *default_alloc_pages(size_t n) {
   assert(n > 0);
   if (n > nr_free) {
@@ -159,10 +159,10 @@ static struct Page *default_alloc_pages(size_t n) {
   return page;
 }
 
-/**
+/* *
  * 释放 base 开始的连续 n 个页面。
  * 释放时需要检查 free_list 是否存在相邻的块，如果存在则需要合并。
- */
+ * */
 static void default_free_pages(struct Page *base, size_t n) {
   assert(n > 0);
   struct Page *p = base;
@@ -187,9 +187,8 @@ static void default_free_pages(struct Page *base, size_t n) {
       ClearPageProperty(base);
       base = p;
       list_del(&(p->page_link));
-    }
-    // 寻找插入的位置，我们需要保证 free_list 内元素是按照地址顺序排列的
-    if (base + base->property < p) {
+    } else if (base + base->property < p) {
+      // 寻找插入的位置，我们需要保证 free_list 内元素是按照地址顺序排列的
       entry = &p->page_link;
       break;
     }
