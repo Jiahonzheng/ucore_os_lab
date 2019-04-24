@@ -13,6 +13,7 @@ __alltraps:
     pushal
 
     # load GD_KDATA into %ds and %es to set up data segments for kernel
+    # 设置数据段为内核数据段
     movl $GD_KDATA, %eax
     movw %ax, %ds
     movw %ax, %es
@@ -30,15 +31,18 @@ __alltraps:
 .globl __trapret
 __trapret:
     # restore registers from stack
+    # 恢复现场
     popal
 
     # restore %ds, %es, %fs and %gs
+    # 恢复段寄存器
     popl %gs
     popl %fs
     popl %es
     popl %ds
 
     # get rid of the trap number and error code
+    # 弹出中断服务程序压入的中断编号和错误码
     addl $0x8, %esp
     iret
 
