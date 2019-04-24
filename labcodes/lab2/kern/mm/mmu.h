@@ -233,15 +233,15 @@ struct taskstate {
 #define PDXSHIFT 22  // offset of PDX in a linear address
 
 /* page table/directory entry flags */
-#define PTE_P     0x001  // 页面是否存在（是否分配）
-#define PTE_W     0x002  // 页面是否可写
-#define PTE_U     0x004  // 页面是否可在用户态操作
-#define PTE_PWT   0x008  // 页面是否写穿透
-#define PTE_PCD   0x010  // 页面是否禁止载入高速缓存
-#define PTE_A     0x020  // 页面是否已被访问
-#define PTE_D     0x040  // 页面是否已被写入
-#define PTE_PS 0x080     // 页面大小（0表示二级页表是4KB的页）
-#define PTE_MBZ   0x180  // 必须全为零
+#define PTE_P 0x001    // 页面是否存在（是否分配）
+#define PTE_W 0x002    // 页面是否可写
+#define PTE_U 0x004    // 页面是否可在用户态操作
+#define PTE_PWT 0x008  // 页面是否写穿透
+#define PTE_PCD 0x010  // 页面是否禁止载入高速缓存
+#define PTE_A 0x020    // 页面是否已被访问
+#define PTE_D 0x040    // 页面是否已被写入
+#define PTE_PS 0x080   // 页面大小（0表示二级页表是4KB的页）
+#define PTE_MBZ 0x180  // 必须全为零
 #define PTE_AVAIL 0xE00  // 9~11 位提供给操作系统或用户程序进行自由发挥
 
 #define PTE_USER (PTE_U | PTE_W | PTE_P)
