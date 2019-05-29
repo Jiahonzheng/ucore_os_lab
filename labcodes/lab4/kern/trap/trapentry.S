@@ -33,6 +33,7 @@ __trapret:
     popal
 
     # restore %ds, %es, %fs and %gs
+    # 恢复中断陷入帧的各个通用寄存器
     popl %gs
     popl %fs
     popl %es
@@ -45,5 +46,6 @@ __trapret:
 .globl forkrets
 forkrets:
     # set stack to this new process's trapframe
+    # 将 esp 指向当前进程的中断陷入帧
     movl 4(%esp), %esp
     jmp __trapret
