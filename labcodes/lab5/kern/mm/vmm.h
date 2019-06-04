@@ -6,40 +6,40 @@
 #include <memlayout.h>
 #include <sync.h>
 
-//pre define
+// pre define
 struct mm_struct;
 
-// the virtual continuous memory area(vma), [vm_start, vm_end), 
-// addr belong to a vma means  vma.vm_start<= addr <vma.vm_end 
+// the virtual continuous memory area(vma), [vm_start, vm_end),
+// addr belong to a vma means  vma.vm_start<= addr <vma.vm_end
 struct vma_struct {
-    struct mm_struct *vm_mm; // the set of vma using the same PDT 
-    uintptr_t vm_start;      // start addr of vma      
-    uintptr_t vm_end;        // end addr of vma, not include the vm_end itself
-    uint32_t vm_flags;       // flags of vma
-    list_entry_t list_link;  // linear list link which sorted by start addr of vma
+  struct mm_struct *vm_mm;  // 记录 vma 隶属的页目录项
+  uintptr_t vm_start;       // 记录 vma 的起始地址
+  uintptr_t vm_end;         // 记录 vma 的结束地址
+  uint32_t vm_flags;        // 记录 vma 的标记位
+  list_entry_t list_link;   // 记录该进程所有 vma 的链表
 };
 
-#define le2vma(le, member)                  \
-    to_struct((le), struct vma_struct, member)
+#define le2vma(le, member) to_struct((le), struct vma_struct, member)
 
-#define VM_READ                 0x00000001
-#define VM_WRITE                0x00000002
-#define VM_EXEC                 0x00000004
-#define VM_STACK                0x00000008
+#define VM_READ 0x00000001
+#define VM_WRITE 0x00000002
+#define VM_EXEC 0x00000004
+#define VM_STACK 0x00000008
 
 // the control struct for a set of vma using the same PDT
 struct mm_struct {
-    list_entry_t mmap_list;        // linear list link which sorted by start addr of vma
-    struct vma_struct *mmap_cache; // current accessed vma, used for speed purpose
-    pde_t *pgdir;                  // the PDT of these vma
-    int map_count;                 // the count of these vma
-    void *sm_priv;                 // the private data for swap manager
-    int mm_count;                  // the number ofprocess which shared the mm
-    lock_t mm_lock;                // mutex for using dup_mmap fun to duplicat the mm
+  list_entry_t mmap_list;         // 记录该进程所有 vma 的链表
+  struct vma_struct *mmap_cache;  // 记录当前访问的 vma
+  pde_t *pgdir;                   // 记录该进程页目录表的起始地址
+  int map_count;                  // 记录该进程的 vma 数目
+  void *sm_priv;                  // 循环队列头指针
+  int mm_count;                   // the number ofprocess which shared the mm
+  lock_t mm_lock;  // mutex for using dup_mmap fun to duplicat the mm
 };
 
 struct vma_struct *find_vma(struct mm_struct *mm, uintptr_t addr);
-struct vma_struct *vma_create(uintptr_t vm_start, uintptr_t vm_end, uint32_t vm_flags);
+struct vma_struct *vma_create(uintptr_t vm_start, uintptr_t vm_end,
+                              uint32_t vm_flags);
 void insert_vma_struct(struct mm_struct *mm, struct vma_struct *vma);
 
 struct mm_struct *mm_create(void);
@@ -59,45 +59,38 @@ int mm_brk(struct mm_struct *mm, uintptr_t addr, size_t len);
 extern volatile unsigned int pgfault_num;
 extern struct mm_struct *check_mm_struct;
 
-bool user_mem_check(struct mm_struct *mm, uintptr_t start, size_t len, bool write);
-bool copy_from_user(struct mm_struct *mm, void *dst, const void *src, size_t len, bool writable);
+bool user_mem_check(struct mm_struct *mm, uintptr_t start, size_t len,
+                    bool write);
+bool copy_from_user(struct mm_struct *mm, void *dst, const void *src,
+                    size_t len, bool writable);
 bool copy_to_user(struct mm_struct *mm, void *dst, const void *src, size_t len);
 
-static inline int
-mm_count(struct mm_struct *mm) {
-    return mm->mm_count;
+static inline int mm_count(struct mm_struct *mm) { return mm->mm_count; }
+
+static inline void set_mm_count(struct mm_struct *mm, int val) {
+  mm->mm_count = val;
 }
 
-static inline void
-set_mm_count(struct mm_struct *mm, int val) {
-    mm->mm_count = val;
+static inline int mm_count_inc(struct mm_struct *mm) {
+  mm->mm_count += 1;
+  return mm->mm_count;
 }
 
-static inline int
-mm_count_inc(struct mm_struct *mm) {
-    mm->mm_count += 1;
-    return mm->mm_count;
+static inline int mm_count_dec(struct mm_struct *mm) {
+  mm->mm_count -= 1;
+  return mm->mm_count;
 }
 
-static inline int
-mm_count_dec(struct mm_struct *mm) {
-    mm->mm_count -= 1;
-    return mm->mm_count;
+static inline void lock_mm(struct mm_struct *mm) {
+  if (mm != NULL) {
+    lock(&(mm->mm_lock));
+  }
 }
 
-static inline void
-lock_mm(struct mm_struct *mm) {
-    if (mm != NULL) {
-        lock(&(mm->mm_lock));
-    }
-}
-
-static inline void
-unlock_mm(struct mm_struct *mm) {
-    if (mm != NULL) {
-        unlock(&(mm->mm_lock));
-    }
+static inline void unlock_mm(struct mm_struct *mm) {
+  if (mm != NULL) {
+    unlock(&(mm->mm_lock));
+  }
 }
 
 #endif /* !__KERN_MM_VMM_H__ */
-
