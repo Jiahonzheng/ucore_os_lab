@@ -8,6 +8,7 @@
 #include <mmu.h>
 #include <default_pmm.h>
 #include <kdebug.h>
+#include <swap_extended_clock.h>
 
 // the valid vaddr for check is between 0~CHECK_VALID_VADDR-1
 #define CHECK_VALID_VIR_PAGE_NUM 5
@@ -40,7 +41,9 @@ swap_init(void)
      }
      
 
-     sm = &swap_manager_fifo;
+     // sm = &swap_manager_fifo;
+     // extended clock swap
+     sm = &swap_manager_extended_clock;
      int r = sm->init();
      
      if (r == 0)

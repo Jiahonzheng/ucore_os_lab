@@ -27,13 +27,16 @@ static void print_ticks() {
 #endif
 }
 
+// IDT 项数
+#define IDT_SIZE 256
+
 /* *
  * Interrupt descriptor table:
  *
  * Must be built at run time because shifted function addresses can't
  * be represented in relocation records.
  * */
-static struct gatedesc idt[256] = {{0}};
+static struct gatedesc idt[IDT_SIZE] = {{0}};
 
 static struct pseudodesc idt_pd = {
     sizeof(idt) - 1, (uintptr_t)idt
@@ -57,6 +60,31 @@ idt_init(void) {
      /* LAB5 YOUR CODE */ 
      //you should update your lab1 code (just add ONE or TWO lines of code), let user app to use syscall to get the service of ucore
      //so you should setup the syscall interrupt gate in here
+     // 表示各个中断处理程序的段内偏移地址
+  extern uintptr_t __vectors[];  // defined in kern/trap/vector.S
+
+  int i;
+
+  /* *
+   * (2) Now you should setup the
+   * entries of ISR in Interrupt Description Table (IDT). Can you see
+   * idt[IDT_SIZE] in this file? Yes, it's IDT! you can use SETGATE macro to
+   * setup each item of IDT.
+   * */
+  for (i = 0; i < IDT_SIZE; ++i) {
+    // 中断处理程序在内核代码段中，特权级为内核级
+    SETGATE(idt[i], GATE_INT, GD_KTEXT, __vectors[i], DPL_KERNEL);
+  }
+
+  // 系统调用中断（陷入中断）的特权级为用户态
+  SETGATE(idt[T_SYSCALL], 1, GD_KTEXT, __vectors[T_SYSCALL], DPL_USER);
+
+  /* * (3) After setup the contents of IDT, you will let
+   * CPU know where is the IDT by using 'lidt' instruction. You don't know the
+   * meaning of this instruction? just google it! and check the libs/x86.h to
+   * know more. Notice: the argument of lidt is idt_pd. try to find it!
+   */
+  lidt(&idt_pd);
 }
 
 static const char *
@@ -234,6 +262,15 @@ trap_dispatch(struct trapframe *tf) {
          * IMPORTANT FUNCTIONS:
 	     * run_timer_list
          */
+        ticks++;
+        if (ticks % 1000 == 0) {
+            list_entry_t *le;
+            for (le = list_next(&proc_list); le != &proc_list; le = list_next(le)) {
+                struct proc_struct *proc = le2proc(le, list_link);
+                proc->page_fault = 0; // 重置页错误计数器
+            }
+        }
+        run_timer_list();
         break;
     case IRQ_OFFSET + IRQ_COM1:
     case IRQ_OFFSET + IRQ_KBD:

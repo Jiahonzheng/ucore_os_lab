@@ -46,6 +46,9 @@
 #define STS_IG32        0xE         // 32-bit Interrupt Gate
 #define STS_TG32        0xF         // 32-bit Trap Gate
 
+#define GATE_INT 0
+#define GATE_TRAP 1
+
 #ifdef __ASSEMBLER__
 
 #define SEG_NULL                                                \
